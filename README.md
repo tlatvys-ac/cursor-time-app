@@ -11,8 +11,9 @@ Built to the shared download-site rules (reference:
 
 ## Images
 
-- `logo.svg` / `favicon.svg`: the panel's own logo (a clock whose minute
-  hand is a cursor), from `CursorTime/ae-extension/client/logo.svg`. The
+- `logo.svg` / `favicon.svg`: the panel's own logo (a rubberhose-style
+  clock face, grinning, whose cursor minute hand is its nose), from
+  `CursorTime/ae-extension/client/logo.svg`. The
   PNG icons are Chrome renders of it.
 - Everything else is rendered from the REAL panel and library art (the
   CursorTime checkout next to this one), with neutral sample content. The

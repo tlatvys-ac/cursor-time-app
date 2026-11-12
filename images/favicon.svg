@@ -1,9 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="28.5" fill="#1f2a3a" stroke="#4DA6FF" stroke-width="4"/>
-  <path d="M32 9.5V13.8M54.5 32H50.2M32 54.5V50.2M9.5 32H13.8" stroke="#9fb4cc" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M32 32L19.5 25.5" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
-  <g transform="translate(44.45 12.07) rotate(55.15) scale(0.6948)">
-    <path d="M0 0L0 28.5L6.7 22.3L10.9 32.1L15.7 30.1L11.5 20.4L20.4 20.4Z" fill="#fff" stroke="#151515" stroke-width="3.74" stroke-linejoin="round"/>
+  <defs>
+    <clipPath id="face"><circle cx="32" cy="33" r="28"/></clipPath>
+    <clipPath id="pupilL"><ellipse cx="23.8" cy="23.6" rx="4.3" ry="7.9"/></clipPath>
+    <clipPath id="pupilR"><ellipse cx="40.2" cy="23.6" rx="4.3" ry="7.9"/></clipPath>
+  </defs>
+  <g transform="translate(32 32) scale(0.95) translate(-32 -33)">
+  <!-- a cream sticker edge, so the black outline reads on dark panels -->
+  <circle cx="32" cy="33" r="28" fill="none" stroke="#F6EEDC" stroke-width="7.6"/>
+  <!-- the clock face: blue, with a rubbery shade -->
+  <circle cx="32" cy="33" r="28" fill="#4DA6FF"/>
+  <g clip-path="url(#face)">
+    <circle cx="36" cy="38" r="28" fill="none" stroke="#2C7FDB" stroke-width="7"/>
   </g>
-  <circle cx="32" cy="32" r="3.8" fill="#4DA6FF" stroke="#151515" stroke-width="1.5"/>
+  <circle cx="32" cy="33" r="28" fill="none" stroke="#151515" stroke-width="3.4"/>
+  <!-- hour ticks -->
+  <path d="M32 8.6V11.6M56.4 33H53.4M7.6 33H10.6" stroke="#151515" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- pie-cut eyes: just the pupils, the cut shows the face -->
+  <ellipse cx="23.8" cy="23.6" rx="4.3" ry="7.9" fill="#151515"/>
+  <ellipse cx="40.2" cy="23.6" rx="4.3" ry="7.9" fill="#151515"/>
+  <path d="M23.8 23.6L27.6 13.4L29.6 18.8Z" fill="#4DA6FF" clip-path="url(#pupilL)"/>
+  <path d="M40.2 23.6L44 13.4L46 18.8Z" fill="#4DA6FF" clip-path="url(#pupilR)"/>
+  <!-- the grin -->
+  <path d="M19 44.8C24.2 48 39.8 48 45 44.8C43.8 53 37.2 56.6 32 56.6S20.2 53 19 44.8Z" fill="#151515"/>
+  <path d="M17.2 43.2Q18.8 45.4 20 43.8M46.8 43.2Q45.2 45.4 44 43.8" fill="none" stroke="#151515" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- the minute hand is a cursor, turned down into a nose (solid black) -->
+  <g transform="translate(32 29.6) rotate(-150) scale(0.43) translate(-13.3 -31.1)">
+    <path d="M0 0L0 28.5L6.7 22.3L10.9 32.1L15.7 30.1L11.5 20.4L20.4 20.4Z" fill="#151515" stroke="#151515" stroke-width="1.6" stroke-linejoin="round"/>
+  </g>
+  <circle cx="32" cy="29.6" r="2.1" fill="#151515"/>
+  </g>
 </svg>
