@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cursor Time — animatable cursors for After Effects</title>
+<link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<meta name="description" content="Cursor Time is a free After Effects panel with 16 vector cursors. Each one becomes a single shape layer with keyframeable states, editable colors, a click ripple and a press squash.">
+<meta name="theme-color" content="#1E2024">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tlatvys-ac.github.io/cursor-time-app/">
+<meta property="og:title" content="Cursor Time — animatable cursors for After Effects">
+<meta property="og:description" content="A free After Effects panel: 16 vector cursors with keyframeable states, editable colors, a click ripple and a press squash.">
+<meta property="og:image" content="https://tlatvys-ac.github.io/cursor-time-app/images/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Cursor Time logo, a clock whose minute hand is a cursor, above six cursors from the library: an arrow hovering, a cartoon glove clicking, a pixel hand, a bubble arrow, a crosshair and a busy spinner">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+    :root {
+        --bg: #1E2024;
+        --surface: #2A2D33;
+        --border: #3E424A;
+        --text: #DDD;
+        --text-strong: #FFF;
+        --muted: #9BA1AA;
+        /* the logo: the clock's blue rim */
+        --accent: #4DA6FF;
+        --accent-hover: #78BCFF;
+        --on-accent: #0B1A2B;
+        --link: #7DBEFF;
+    }
+    * { box-sizing: border-box; }
+    html { overflow-x: clip; }
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, "SF Pro Text", "Helvetica Neue", "Segoe UI", sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+        max-width: 660px;
+        margin: 0 auto;
+        padding: 64px 24px 48px;
+    }
+    a { color: var(--link); text-underline-offset: 2px; }
+    a:hover { color: var(--accent-hover); }
+    :focus-visible {
+        outline: 2px solid var(--text-strong);
+        outline-offset: 3px;
+        border-radius: 4px;
+    }
+    h1, h2, h3, .tagline, figcaption { text-wrap: balance; }
+
+    /* ---------------------------------------------------------- hero */
+    .hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .mark { width: 112px; height: 112px; }
+    h1 {
+        margin: 18px -0.3em 0 0;   /* cancel the trailing letter-spacing so it centers */
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.3em;
+        line-height: 1.2;
+        color: var(--text-strong);
+    }
+    .tagline {
+        margin: 12px 0 0;
+        color: #B4B9C1;
+        font-size: 18px;
+        max-width: 460px;
+    }
+    .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 28px;
+    }
+    .btn {
+        display: inline-block;
+        min-width: 296px;
+        text-align: center;
+        background: var(--accent);
+        border-radius: 8px;
+        color: var(--on-accent);
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.4;
+        padding: 12px 32px;
+        text-decoration: none;
+        box-shadow: 0 6px 24px rgba(77, 166, 255, 0.22);
+        transition: background-color 120ms, box-shadow 120ms, transform 120ms;
+        white-space: nowrap;
+    }
+    .btn:hover {
+        background: var(--accent-hover);
+        color: var(--on-accent);
+        box-shadow: 0 8px 32px rgba(77, 166, 255, 0.35);
+        transform: translateY(-1px);
+    }
+    .btn:active { transform: none; box-shadow: 0 4px 16px rgba(77, 166, 255, 0.22); }
+    /* the other platform's button: outlined, so the visitor's own stands out */
+    .btn.btn-secondary {
+        background: transparent;
+        color: var(--text-strong);
+        box-shadow: inset 0 0 0 1px var(--accent);
+    }
+    .btn.btn-secondary:hover {
+        background: rgba(77, 166, 255, 0.12);
+        color: var(--text-strong);
+        box-shadow: inset 0 0 0 1px var(--accent-hover);
+    }
+    .btn.btn-secondary small { color: var(--muted); }
+    .btn small {
+        display: block;
+        font-weight: 500;
+        font-size: 12px;
+        color: rgba(11, 26, 43, 0.75);
+    }
+    .hero-notes {
+        margin: 16px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+    }
+
+    /* ------------------------------------------------------ sections */
+    section { margin-top: 72px; }
+    h2.divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 24px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+    }
+    h2.divider::before, h2.divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+    }
+    h3 {
+        margin: 32px 0 8px;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.4;
+        color: var(--text-strong);
+    }
+    p { margin: 0 0 12px; }
+    .lead { font-size: 17px; }
+    .fine { color: var(--muted); font-size: 14px; }
+    strong { color: var(--text-strong); }
+
+    /* ------------------------------------------------------- gallery */
+    /* Renders break out of the text column. */
+    .gallery {
+        width: min(1080px, calc(100vw - 48px));
+        margin-left: 50%;
+        transform: translateX(-50%);
+    }
+    .gallery h3 {
+        margin: 40px 0 14px;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        text-align: center;
+    }
+    .gallery h3:first-child { margin-top: 0; }
+    .shots {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .shots.three { grid-template-columns: repeat(3, 1fr); }
+    .shots.four { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 900px) { .shots.four { grid-template-columns: 1fr 1fr; } }
+    .shots figure { margin: 0; }
+    .shot {
+        display: block;
+        width: 100%;
+        padding: 0;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        overflow: hidden;
+        cursor: zoom-in;
+        transition: border-color 120ms;
+    }
+    .shot:hover { border-color: var(--accent); }
+    .shot:focus-visible { border-radius: 10px; }
+    .shot img {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+    .shots figcaption {
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--muted);
+        text-align: center;
+    }
+    .shots figcaption strong { font-weight: 600; }
+
+    /* ------------------------------------------------------ features */
+    .features {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    .features li {
+        padding: 16px 18px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    .features li strong {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 16px;
+    }
+
+    /* --------------------------------------------------------- setup */
+    .steps {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: step;
+    }
+    .steps li {
+        position: relative;
+        margin-bottom: 16px;
+        padding-left: 44px;
+        counter-increment: step;
+    }
+    .steps li::before {
+        content: counter(step);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--c);
+        color: var(--on-accent);
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 28px;
+        text-align: center;
+    }
+    .steps li { --c: var(--accent); }
+
+    .callout {
+        margin: 28px 0 0;
+        padding: 16px 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 8px;
+        scroll-margin-top: 24px;
+    }
+    .callout h3 { margin: 0 0 6px; font-size: 16px; }
+    .callout p { margin: 0 0 8px; font-size: 15px; }
+    .callout p:last-child { margin-bottom: 0; }
+
+    details {
+        margin-top: 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+    summary {
+        padding: 14px 20px;
+        font-weight: 600;
+        color: var(--text-strong);
+        cursor: pointer;
+        list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin: 0 12px 2px 0;
+        border-right: 2px solid var(--muted);
+        border-bottom: 2px solid var(--muted);
+        transform: rotate(-45deg);
+        transition: transform 120ms;
+    }
+    details[open] summary::before { transform: rotate(45deg); }
+    .details-body { padding: 0 20px 18px; }
+    .details-body h3 { margin: 12px 0 6px; font-size: 16px; }
+    .details-body h3 ~ h3 { margin-top: 24px; }
+
+    .path {
+        display: flex;
+        align-items: stretch;
+        margin: 8px 0 12px;
+        background: #17191C;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+    }
+    .path code {
+        flex: 1;
+        min-width: 0;
+        padding: 9px 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+        font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+        color: var(--text);
+    }
+    .copy {
+        flex: none;
+        padding: 0 14px;
+        border: 0;
+        border-left: 1px solid var(--border);
+        border-radius: 0 6px 6px 0;
+        background: transparent;
+        color: var(--link);
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .copy:hover { background: var(--surface); }
+
+    /* ------------------------------------------------------ lightbox */
+    .lightbox {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(10, 11, 13, 0.92);
+        z-index: 100;
+        cursor: zoom-out;
+        padding: 24px;
+    }
+    .lightbox[hidden] { display: none; }
+    .lightbox img {
+        max-width: 96vw;
+        max-height: 92vh;
+        width: auto;
+        height: auto;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+    }
+    .lightbox-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        background: var(--surface);
+        color: var(--text-strong);
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    /* --------------------------------------------------- hero image */
+    /* Breaks out of the text column, like the gallery. */
+    .hero-media {
+        position: relative;
+        flex: none;
+        width: min(756px, calc(100vw - 48px));
+        margin-top: 44px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        background: #16171A;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+    }
+    .hero-media img { display: block; width: 100%; height: auto; }
+    .hero-media video {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+    .video-toggle {
+        position: absolute;
+        right: 14px;
+        bottom: 14px;
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        background: rgba(20, 22, 26, 0.55);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        color: #FFF;
+        cursor: pointer;
+        opacity: 0.75;
+        transition: opacity 120ms;
+    }
+    .video-toggle:hover, .video-toggle:focus-visible { opacity: 1; }
+    .video-toggle:focus-visible { border-radius: 50%; }
+    .video-toggle svg { width: 14px; height: 14px; fill: currentColor; }
+    .video-toggle .icon-play, .video-toggle.paused .icon-pause { display: none; }
+    .wide { margin-top: 16px; }
+
+    /* -------------------------------------------------------- footer */
+    footer {
+        margin-top: 88px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+    }
+    footer p { margin: 0 0 6px; }
+    footer a { text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    .sep { margin: 0 6px; opacity: 0.5; }
+
+    @media (max-width: 620px) {
+        .wrap { padding-top: 48px; }
+        .shots, .shots.three, .shots.four, .features { grid-template-columns: 1fr; }
+        section { margin-top: 56px; }
+        /* tall panel shots: don't let them fill a whole phone screen */
+        .shots.three figure { width: min(100%, 320px); margin: 0 auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; }
+    }
+    .steps ul.sub { margin: 6px 0 0; padding-left: 18px; }
+    .steps ul.sub li { padding-left: 0; margin-bottom: 4px; counter-increment: none; }
+    .steps ul.sub li::before { content: none; }
+    code { font: 14px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text-strong); }
+    kbd { font: inherit; }
+    .alt-downloads { margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <header class="hero">
+        <img class="mark" src="images/logo.svg" alt="" width="112" height="112">
+        <h1>CURSOR TIME</h1>
+        <p class="tagline">Animatable vector cursors for After&nbsp;Effects, ready in one click</p>
+        <div class="buttons">
+            <a class="btn" id="dl-zxp" href="https://github.com/tlatvys-ac/cursor-time-app/releases/latest/download/CursorTime_v0.1.0.zxp">
+                Download Cursor Time
+                <small>After Effects panel (.zxp) · Mac + Windows · free</small>
+            </a>
+        </div>
+        <p class="hero-notes">
+            Installs with a free ZXP installer, which may show a certificate notice.
+            <a href="#unsigned">What to expect</a>
+        </p>
+        <div class="hero-media">
+            <video id="hero-video" width="1512" height="840" autoplay muted loop playsinline preload="auto" poster="images/hero-poster.png" aria-label="The Cursor Time panel in After Effects with AC Cursor picked, next to a comp where the cursor glides over a sign-up card: it hovers and clicks a toggle with a ripple and a squash, clicks Get started and turns into a busy spinner, while the timeline shows the State keyframes driving it">
+                <source src="images/hero.mp4" type="video/mp4">
+            </video>
+            <button class="video-toggle" id="video-toggle" type="button" aria-label="Pause video">
+                <svg class="icon-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1"/><rect x="9.5" y="2.5" width="3" height="11" rx="1"/></svg>
+                <svg class="icon-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4a.8.8 0 0 0 1.2.7l8.4-5.2a.8.8 0 0 0 0-1.4L5.7 2.1a.8.8 0 0 0-1.2.7z"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <main>
+    <section>
+        <h2 class="divider">About</h2>
+        <p class="lead">Cursor Time is a library of cursors in an After
+        Effects panel. Pick one, press <strong>Create Cursor</strong>, and
+        it lands in your comp as a single shape layer with its point
+        exactly on the layer's anchor.</p>
+        <p>Animate Position to move it, and keyframe its State to hover,
+        click, grab or wait. The click ripple and the press squash fire on
+        their own whenever it clicks. Colors, size and shadow are all
+        controls in Effect Controls, so you can change them at any time.</p>
+    </section>
+
+    <section>
+        <h2 class="divider">What it looks like</h2>
+        <div class="gallery">
+            <div class="shots three">
+                <figure>
+                    <button class="shot" type="button" aria-haspopup="dialog">
+                        <picture>
+                            <source type="image/avif" srcset="images/library.avif">
+                            <img src="images/library.png" width="820" height="1500" loading="lazy" decoding="async" alt="The Cursor Time panel showing its library four across: AC Cursor, Modern Arrow, Classic Arrow, Simple Hand, Navigation Pointer, Pointer Hand, Classic Hand, Classic Hand Dark, Text I-Beam, Pixel Arrow, Pixel Hand, Cartoon Glove, Bubble Arrow, Touch Dot, Crosshair and Busy, with filters for Classic, Pixel, Cartoon and Utility">
+                        </picture>
+                    </button>
+                    <figcaption><strong>The library</strong> — hover a cursor to play its states</figcaption>
+                </figure>
+                <figure>
+                    <button class="shot" type="button" aria-haspopup="dialog">
+                        <picture>
+                            <source type="image/avif" srcset="images/details.avif">
+                            <img src="images/details.png" width="820" height="1500" loading="lazy" decoding="async" alt="AC Cursor picked in the panel: a sheet slides up with a large preview of its Hover state, the states Default, Hover, Click and Busy, its Body, Border and Accent colors with Invert and Reset, the Tip highlight and Click ripple options, and the Create Cursor button">
+                        </picture>
+                    </button>
+                    <figcaption><strong>Pick one</strong> — preview its states, then Create Cursor</figcaption>
+                </figure>
+                <figure>
+                    <button class="shot" type="button" aria-haspopup="dialog">
+                        <picture>
+                            <source type="image/avif" srcset="images/colors.avif">
+                            <img src="images/colors.png" width="820" height="1500" loading="lazy" decoding="async" alt="The Cartoon Glove recolored in the panel: a yellow glove with a dark purple outline, a teal cuff and a pink pop, previewed in its Click state">
+                        </picture>
+                    </button>
+                    <figcaption><strong>Your colors</strong> — remembered for each cursor</figcaption>
+                </figure>
+            </div>
+            <h3>Every cursor, every state</h3>
+            <div class="shots" style="grid-template-columns: 1fr">
+                <figure>
+                    <button class="shot" type="button" aria-haspopup="dialog">
+                        <picture>
+                            <source type="image/avif" srcset="images/states.avif">
+                            <img src="images/states.png" width="2160" height="1404" loading="lazy" decoding="async" alt="All 16 cursors with each of their states side by side, from AC Cursor's Default, Hover, Click and Busy to the Busy cursor's Spinner, Ring, Hourglass, Done and Error">
+                        </picture>
+                    </button>
+                    <figcaption><strong>16 cursors</strong> — 3 to 6 states each, switched with one State dropdown</figcaption>
+                </figure>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2 class="divider">Features</h2>
+        <ul class="features">
+            <li><strong>16 vector cursors</strong>Arrows, hands, pixel art, a cartoon glove, an I-beam, a crosshair, a touch dot and a busy spinner, crisp at any size</li>
+            <li><strong>Keyframeable states</strong>One State dropdown in Effect Controls: hover, click, grab, copy, wait and more</li>
+            <li><strong>Click ripple and press squash</strong>Both fire on their own whenever the State switches to clicking</li>
+            <li><strong>Editable colors</strong>Set them in the panel before you create, or change them later in Effect Controls. Invert swaps light and dark</li>
+            <li><strong>Tip highlight on or off</strong>Turn off the ring under the point and keep the press squash</li>
+            <li><strong>Sized for your comp</strong>A Size control that starts at the right scale for your comp, plus a soft drop shadow you can switch off</li>
+            <li><strong>The point is the anchor</strong>Position is exactly where the cursor points, so it lines up with buttons on the first try</li>
+            <li><strong>Just a shape layer</strong>No plug-ins and no footage, so your project renders on any machine</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2 class="divider">Setup</h2>
+        <ol class="steps">
+            <li><strong>Download Cursor Time.</strong> It's one
+                <code>CursorTime_v<span class="v">0.1.0</span>.zxp</code> file for
+                both Mac and Windows.</li>
+            <li><strong>Install it.</strong> Open the .zxp with a ZXP installer
+                (<a href="https://aescripts.com/learn/zxp-installer/">aescripts
+                ZXP Installer</a> is free, for Mac and Windows).</li>
+            <li><strong>Open the panel.</strong> Restart After Effects and
+                choose <em>Window&nbsp;→ Extensions&nbsp;→ Cursor&nbsp;Time</em>.</li>
+            <li><strong>Create a cursor.</strong> Open a comp, pick a cursor
+                and press <em>Create Cursor</em> (or double-click it). It
+                lands in the middle of the comp, ready to animate.</li>
+            <li><strong>Animate it.</strong> Keyframe Position to move it and
+                State (in <em>Effect Controls&nbsp;→ Cursor Time</em>) to hover
+                and click.</li>
+        </ol>
+
+        <div class="callout" id="unsigned">
+            <h3>If the installer warns you</h3>
+            <p>Cursor Time is signed with a self-signed certificate, so your
+            ZXP installer may show an "unverified publisher" notice. That's
+            expected; go ahead and install.</p>
+        </div>
+
+        <details>
+            <summary>Advanced and uninstalling</summary>
+            <div class="details-body">
+                <h3>Where things go</h3>
+                <p class="fine">Each new cursor gets its <em>Cursor Time</em>
+                controls from a small preset that the panel writes here:</p>
+                <div class="path">
+                    <code id="preset-mac">~/Library/Application Support/CursorTime/presets</code>
+                    <button class="copy" type="button" data-copy="preset-mac">Copy</button>
+                </div>
+                <div class="path">
+                    <code id="preset-win">%APPDATA%\CursorTime\presets</code>
+                    <button class="copy" type="button" data-copy="preset-win">Copy</button>
+                </div>
+                <p class="fine">Cursors you've already created don't need
+                it: the controls are saved in your project.</p>
+                <h3>Uninstalling</h3>
+                <p class="fine">Remove the panel with your ZXP installer, or
+                delete the <em>CursorTime</em> folder it installed. On a Mac
+                it's in one of these:</p>
+                <div class="path">
+                    <code id="install-mac">/Library/Application Support/Adobe/CEP/extensions/CursorTime</code>
+                    <button class="copy" type="button" data-copy="install-mac">Copy</button>
+                </div>
+                <div class="path">
+                    <code id="install-mac-user">~/Library/Application Support/Adobe/CEP/extensions/CursorTime</code>
+                    <button class="copy" type="button" data-copy="install-mac-user">Copy</button>
+                </div>
+                <p class="fine">On Windows, in one of these:</p>
+                <div class="path">
+                    <code id="install-win">C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\CursorTime</code>
+                    <button class="copy" type="button" data-copy="install-win">Copy</button>
+                </div>
+                <div class="path">
+                    <code id="install-win-user">%APPDATA%\Adobe\CEP\extensions\CursorTime</code>
+                    <button class="copy" type="button" data-copy="install-win-user">Copy</button>
+                </div>
+            </div>
+        </details>
+    </section>
+
+    <section>
+        <h2 class="divider">Requirements</h2>
+        <p class="fine">After Effects 2022 or later, on macOS or Windows.
+        Cursor Time runs entirely inside After Effects: no accounts, no
+        internet connection, nothing uploaded.</p>
+    </section>
+    </main>
+
+    <footer>
+        <p>Cursor Time <span id="version">v0.1.0</span><span class="sep">·</span><wbr><a href="https://github.com/tlatvys-ac/cursor-time-app/releases">Release notes</a><span class="sep">·</span><wbr>Made&nbsp;by&nbsp;Thomas&nbsp;Latvys</p>
+        <p>More tools:
+            <a href="https://tlatvys-ac.github.io/fluidlab-app/">FluidLab</a><span class="sep">·</span><wbr><a href="https://tlatvys-ac.github.io/refractlab-app/">RefractLab</a><span class="sep">·</span><wbr><a href="https://tlatvys-ac.github.io/anchor-buddy-app/">Anchor&nbsp;Buddy</a><span class="sep">·</span><wbr><a href="https://tlatvys-ac.github.io/transporter-app/">Transporter</a><span class="sep">·</span><wbr><a href="https://tlatvys-ac.github.io/aedoom-app/">AEDoom</a><span class="sep">·</span><wbr><a href="https://tlatvys-ac.github.io/motionref-app/">MotionRef</a><span class="sep">·</span><wbr><a href="https://tlatvys-ac.github.io/meld-app/">Meld</a><span class="sep">·</span><wbr><a href="https://tlatvys-ac.github.io/gradientlab-app/">GradientLab</a>
+        </p>
+    </footer>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Screenshot preview" hidden>
+    <img id="lightbox-img" src="" alt="">
+    <button class="lightbox-close" id="lightbox-close" type="button" aria-label="Close preview">×</button>
+</div>
+
+<script>
+// Click (or Enter/Space on) a screenshot to preview it at full size;
+// click anywhere, press Escape, or use the close button to close. Focus
+// moves into the preview and back to the screenshot that opened it.
+(() => {
+    const box = document.getElementById("lightbox");
+    const big = document.getElementById("lightbox-img");
+    const closeBtn = document.getElementById("lightbox-close");
+    let opener = null;
+    const open = (btn) => {
+        const img = btn.querySelector("img");
+        big.src = img.currentSrc || img.src;
+        big.alt = img.alt;
+        opener = btn;
+        box.hidden = false;
+        document.body.style.overflow = "hidden";
+        closeBtn.focus();
+    };
+    const close = () => {
+        if (box.hidden) return;
+        box.hidden = true;
+        document.body.style.overflow = "";
+        if (opener) opener.focus();
+    };
+    document.querySelectorAll(".shot").forEach((btn) => btn.addEventListener("click", () => open(btn)));
+    box.addEventListener("click", close);
+    document.addEventListener("keydown", (e) => {
+        if (box.hidden) return;
+        if (e.key === "Escape") close();
+        if (e.key === "Tab") { e.preventDefault(); closeBtn.focus(); }
+    });
+})();
+
+// Copy the uninstall path.
+document.querySelectorAll(".copy").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        const text = document.getElementById(btn.dataset.copy).textContent;
+        const done = () => {
+            btn.textContent = "Copied";
+            setTimeout(() => { btn.textContent = "Copy"; }, 1500);
+        };
+        if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => {});
+    });
+});
+
+// Hero video: a pause/play button, and no autoplay for reduced motion.
+(() => {
+    const video = document.getElementById("hero-video");
+    const btn = document.getElementById("video-toggle");
+    const sync = () => {
+        btn.classList.toggle("paused", video.paused);
+        btn.setAttribute("aria-label", video.paused ? "Play video" : "Pause video");
+    };
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        video.removeAttribute("autoplay");
+        video.pause();
+    }
+    btn.addEventListener("click", () => (video.paused ? video.play() : video.pause()));
+    video.addEventListener("play", sync);
+    video.addEventListener("pause", sync);
+    sync();
+})();
+
+// Keep the version and download link pointing at the latest release
+// automatically; the hardcoded values above are the fallback if this
+// fetch fails.
+fetch("https://api.github.com/repos/tlatvys-ac/cursor-time-app/releases/latest")
+    .then((r) => r.json())
+    .then((rel) => {
+        const v = (rel.tag_name || "").replace(/^v/, "");
+        if (v) {
+            document.getElementById("version").textContent = "v" + v;
+            document.querySelectorAll(".v").forEach((el) => { el.textContent = v; });
+        }
+        const zxp = (rel.assets || []).find((x) => /\.zxp$/.test(x.name));
+        if (zxp) document.getElementById("dl-zxp").href = zxp.browser_download_url;
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>

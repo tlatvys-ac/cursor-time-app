@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<!--
+  Cursor Time page renders. Served from ~/Documents/GitHub (so the real
+  panel in ../../../CursorTime is reachable):  python3 -m http.server 7498
+  Scenes: ?scene=hero (animated: window.frame(t), t in 0..LOOP seconds),
+  library, details, colors, states, og.
+-->
+<html><head><meta charset="UTF-8"><style>
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,"SF Pro Text","Helvetica Neue",sans-serif;overflow:hidden;position:relative;
+    background:radial-gradient(110% 90% at 20% 25%,#1d2a3b 0%,#181b20 50%,#141518 100%)}
+  .win{position:absolute;border-radius:10px;overflow:hidden;background:#232323;
+    box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08)}
+  .tabs{height:28px;display:flex;align-items:flex-end;background:#1b1b1b;padding-left:8px}
+  .tab{color:#ddd;font-size:11.5px;padding:0 12px 7px;border-bottom:2px solid #4b8fe8;white-space:nowrap}
+  .tab.dim{color:#8a8a8a;border-color:transparent}
+  .win iframe{display:block;border:0;width:100%}
+  /* ---- comp viewer ---- */
+  .viewer{position:relative;background:#1e1e1e;display:grid;place-items:center}
+  .comp{position:relative;overflow:hidden;background:#eef1f6}
+  .card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:236px;padding:16px 18px 18px;
+    background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(20,40,80,.12);font-size:11px;color:#1b2333}
+  .card h4{margin:0 0 2px;font-size:14px}
+  .card p{margin:0 0 10px;color:#6b7486;font-size:10px}
+  .field{height:26px;border:1px solid #d6dbe4;border-radius:7px;padding:0 9px;display:flex;align-items:center;color:#9aa2b1;font-size:10.5px}
+  .row{display:flex;align-items:center;justify-content:space-between;margin:10px 0 12px;font-size:10.5px}
+  .toggle{width:30px;height:17px;border-radius:9px;background:#cfd5df;position:relative;transition:none}
+  .toggle i{position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .toggle.on{background:#3b82f6}.toggle.on i{left:15px}
+  .go{height:30px;border-radius:8px;background:#1b2333;color:#fff;font-weight:600;display:grid;place-items:center;font-size:11px}
+  .go.hover{background:#2e3a52}.go.down{background:#121826;transform:scale(.98)}
+  .cursor{position:absolute;left:0;top:0;width:0;height:0;overflow:visible;pointer-events:none}
+  .cursor svg{position:absolute;overflow:visible}
+  .ct-spin{animation:none!important}
+  /* ---- mini timeline ---- */
+  .tl{position:relative;background:#232323;border-top:1px solid #111;font-size:10.5px;color:#bbb}
+  .tl .ruler{position:absolute;left:118px;right:10px;top:0;height:18px;border-bottom:1px solid #333}
+  .tl .ruler span{position:absolute;top:3px;font-size:9px;color:#7d7d7d;transform:translateX(-50%)}
+  .tl .lane{position:absolute;left:0;right:0;height:20px;display:flex;align-items:center}
+  .tl .lane b{font-weight:500;width:118px;padding-left:10px;box-sizing:border-box;white-space:nowrap}
+  .tl .lane b.sub{padding-left:24px;color:#9a9a9a;font-weight:400}
+  .tl .keys{position:absolute;left:118px;right:10px;top:0;bottom:0}
+  .tl .k{position:absolute;top:6px;width:7px;height:7px;background:#c9c9c9;transform:translateX(-50%) rotate(45deg)}
+  .tl .k.hold{transform:translateX(-50%);border-radius:1px;background:#e6e6e6}
+  .tl .k.sel{background:#4DA6FF}
+  .tl .bar{position:absolute;top:4px;height:12px;left:0;right:0;background:#3c4a5c;border-radius:2px}
+  .tl .head{position:absolute;top:0;bottom:0;width:1px;background:#4b8fe8}
+  .tl .head:before{content:"";position:absolute;top:0;left:-5px;border:5px solid transparent;border-top:7px solid #4b8fe8}
+  .tl .val{color:#4DA6FF;margin-left:auto;padding-right:8px}
+  .label{position:absolute;color:#8f949c;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+</style></head><body>
+<script src="../../../CursorTime/ae-extension/client/lib/library.js"></script>
+<script src="../../../CursorTime/ae-extension/client/lib/render.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const scene = q.get("scene") || "hero";
+const L = window.CursorTimeLibrary, R = window.CursorTimeRender;
+const byId = (id) => L.CURSORS.find((c) => c.id === id);
+const PANEL = "../../../CursorTime/ae-extension/client/index.html";
+
+/** An AE-style docked panel holding the REAL Cursor Time panel. */
+function panelWin(x, y, w, h, setup, storage) {
+  // same origin as the panel: its remembered colors/options start from here
+  localStorage.clear();
+  for (const k in storage || {}) localStorage.setItem(k, JSON.stringify(storage[k]));
+  const el = document.createElement("div");
+  el.className = "win"; Object.assign(el.style, { left: x + "px", top: y + "px", width: w + "px" });
+  el.innerHTML = '<div class="tabs"><span class="tab">Cursor Time</span><span class="tab dim">Effects &amp; Presets</span></div>' +
+    '<iframe style="height:' + (h - 28) + 'px"></iframe>';
+  document.body.appendChild(el);
+  const f = el.querySelector("iframe");
+  f.onload = () => {
+    const w2 = f.contentWindow, d = f.contentDocument;
+    // freeze the comp probe so every frame reads the same
+    setTimeout(() => {
+      for (let i = 1; i < 2000; i++) w2.clearInterval(i);
+      d.getElementById("comp-text").textContent = (window.COMP || "Sign Up") + " · 1920×1080";
+      d.getElementById("comp").className = "pill on";
+      if (setup) setup(w2, d);
+      window.ready = true;
+    }, 300);
+  };
+  f.src = PANEL;
+  return el;
+}
+const pick = (d, id) => d.querySelector('.card[data-id="' + id + '"]').click();
+
+/* ------------------------------------------------------------------
+   Hero: the panel + a comp where AC Cursor clicks through a sign-up
+------------------------------------------------------------------ */
+const LOOP = 8;
+function heroScene() {
+  window.COMP = "Sign Up";
+  panelWin(16, 22, 296, 376, (w, d) => {
+    pick(d, "ac");
+    d.getElementById("fold").click();               // the slim bar: name + Create
+    d.querySelector(".sheet").style.transition = "none";
+    d.querySelector(".sheet-body").style.transition = "none";
+  });
+  const v = document.createElement("div");
+  v.className = "win"; Object.assign(v.style, { left: "328px", top: "22px", width: "412px" });
+  v.innerHTML = '<div class="tabs"><span class="tab">Composition: Sign Up</span><span class="tab dim">Effect Controls</span></div>' +
+    '<div class="viewer" style="height:262px"><div class="comp" id="comp" style="width:384px;height:216px">' +
+    '<div class="card"><h4>Create your account</h4><p>It takes less than a minute.</p>' +
+    '<div class="field">name@studio.com</div>' +
+    '<div class="row"><span>Send me product updates</span><span class="toggle" id="toggle"><i></i></span></div>' +
+    '<div class="go" id="go">Get started</div></div>' +
+    '<div class="cursor" id="cur"></div></div></div>' +
+    '<div class="tl" id="tl" style="height:86px"></div>';
+  document.body.appendChild(v);
+}
+
+// keyframes, comp coords (400x225). State: 0 Default, 1 Hover, 2 Click, 3 Busy
+const AC = byId("ac"), COL = L.defaultColors(AC);
+// targets are read off the comp's own UI once it's laid out (see place())
+const P = { rest: [326, 192], toggle: [0, 0], go: [0, 0] };
+function place() {
+  const c = document.getElementById("comp").getBoundingClientRect();
+  const at = (id, dx, dy) => { const r = document.getElementById(id).getBoundingClientRect(); return [r.left - c.left + r.width / 2 + dx, r.top - c.top + r.height / 2 + dy]; };
+  P.toggle.splice(0, 2, ...at("toggle", -2, 1));
+  P.go.splice(0, 2, ...at("go", 14, 2));
+}
+const MOVES = [ // [t0, t1, from, to]
+  [0.2, 1.3, P.rest, P.toggle],
+  [2.3, 3.2, P.toggle, P.go],
+  [5.3, 6.1, P.go, P.toggle],
+  [6.9, 7.8, P.toggle, P.rest],
+];
+const STATES = [ // hold keys [t, state]
+  [0, 0], [1.3, 1], [1.6, 2], [1.75, 1], [2.3, 0], [3.2, 1], [3.5, 2], [3.65, 3], [4.9, 1], [5.3, 0],
+  [6.1, 1], [6.4, 2], [6.55, 1], [6.9, 0],
+];
+const TOGGLE_FLIPS = [1.6, 6.4];
+const ease = (p) => p <= 0 ? 0 : p >= 1 ? 1 : p * p * (3 - 2 * p);
+const easeIO = (p) => p <= 0 ? 0 : p >= 1 ? 1 : (p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+function posAt(t) {
+  let p = P.rest;
+  for (const [a, b, f, to] of MOVES) {
+    if (t >= b) p = to;
+    else if (t > a) { const k = easeIO((t - a) / (b - a)); p = [f[0] + (to[0] - f[0]) * k, f[1] + (to[1] - f[1]) * k]; }
+  }
+  return p;
+}
+function keyAt(t) { let i = 0; for (let j = 0; j < STATES.length; j++) if (STATES[j][0] <= t + 1e-6) i = j; return i; }
+// same math as build.js's expressions (squash, ripple)
+function pressed(t) {
+  const k = keyAt(t), s = STATES[k][1], prev = k > 0 ? STATES[k - 1][1] : -1, dt = t - STATES[k][0];
+  if (s === 2) return prev === 2 ? 1 : ease(dt / 0.06);
+  if (prev === 2) return 1 - ease(dt / 0.14);
+  return 0;
+}
+function sinceClick(t) {
+  for (let j = keyAt(t); j >= 0; j--) if (STATES[j][1] === 2) return t - STATES[j][0];
+  return 1e9;
+}
+
+const PX = 0.72;      // comp px per library unit (the cursor's Size)
+function frame(t) {
+  t = ((t % LOOP) + LOOP) % LOOP;
+  const st = STATES[keyAt(t)][1];
+  const [x, y] = posAt(t);
+  const cur = document.getElementById("cur");
+  const [vx, vy, vw, vh] = AC.view;
+  const sq = 1 - 0.12 * pressed(t);
+  let html = R.cursorSVG(AC, st, COL, {});
+  // the svg is drawn in library units around the hotspot (0,0)
+  const a = sinceClick(t), D = 0.45;
+  let ripple = "";
+  if (a >= 0 && a < D) {
+    const p = a / D, r = 26 * (1 - Math.pow(1 - p, 3)), wdt = 3.2 * (1 - p) + 0.6;
+    ripple = `<svg viewBox="-60 -60 120 120" style="left:${-60 * PX}px;top:${-60 * PX}px;width:${120 * PX}px;height:${120 * PX}px">` +
+      `<circle cx="0" cy="0" r="${r}" fill="none" stroke="${R.hex(COL.accent)}" stroke-width="${wdt}" opacity="${1 - p}"/></svg>`;
+  }
+  const sh = AC.shadow;
+  cur.style.transform = `translate(${x}px,${y}px)`;
+  cur.innerHTML = ripple + html.replace("<svg ", `<svg style="left:${vx * PX * sq}px;top:${vy * PX * sq}px;width:${vw * PX * sq}px;height:${vh * PX * sq}px;` +
+    `filter:drop-shadow(0 ${sh.distance * PX * 1.4}px ${sh.softness * PX * 0.7}px rgba(0,0,0,${sh.opacity / 100}))" `);
+  // the busy spinner turns with time, like the layer's rotation expression
+  cur.querySelectorAll(".ct-spin").forEach((g) => { g.style.transform = `rotate(${t * 360}deg)`; });
+  // the comp's own UI reacting
+  let on = false; for (const f of TOGGLE_FLIPS) if (t >= f) on = !on;
+  document.getElementById("toggle").className = "toggle" + (on ? " on" : "");
+  const go = document.getElementById("go");
+  const overGo = Math.hypot(x - P.go[0], y - P.go[1]) < 6;
+  go.className = "go" + (overGo ? (st === 2 ? " down" : " hover") : "");
+  go.textContent = st === 3 ? "Creating…" : "Get started";
+  timeline(t, st);
+}
+const NAMES = AC.states.map((s) => s.name);
+function timeline(t, st) {
+  const tl = document.getElementById("tl");
+  if (!tl.dataset.built) {
+    tl.dataset.built = 1;
+    const X = (s) => (s / LOOP * 100) + "%";
+    let ruler = "";
+    for (let s = 0; s <= LOOP; s += 2) ruler += `<span style="left:${X(s)}">${s ? s + "s" : "0s"}</span>`;
+    const stateKeys = STATES.map(([s]) => `<i class="k hold" style="left:${X(s)}"></i>`).join("");
+    const posKeys = MOVES.flatMap(([a, b]) => [a, b]).map((s) => `<i class="k" style="left:${X(s)}"></i>`).join("");
+    tl.innerHTML = `<div class="ruler">${ruler}</div>` +
+      `<div class="lane" style="top:20px"><b>▾ AC Cursor</b><div class="keys"><div class="bar"></div></div></div>` +
+      `<div class="lane" style="top:42px"><b class="sub">State</b><div class="keys">${stateKeys}</div></div>` +
+      `<div class="lane" style="top:64px"><b class="sub">Position</b><div class="keys">${posKeys}</div></div>` +
+      `<div class="keys" style="top:0;bottom:0"><div class="head" id="head"></div></div>` +
+      `<span class="val" id="stv" style="position:absolute;left:62px;top:45px;font-size:10px"></span>`;
+  }
+  document.getElementById("head").style.left = (t / LOOP * 100) + "%";
+  document.getElementById("stv").textContent = NAMES[st];
+}
+
+/* ------------------------------------------------------------------
+   Gallery tiles: the real panel at a narrow width
+------------------------------------------------------------------ */
+function tile(setup, storage) {
+  document.body.style.background = "#1b1d21";
+  const w = innerWidth, h = innerHeight;
+  panelWin(14, 14, w - 28, h - 28, setup, storage);
+}
+function detailsScene() {
+  tile((w, d) => {
+    pick(d, "ac");
+    d.querySelectorAll("#states button")[1].click();       // Hover
+  });
+}
+function librarySceneWithHover() { tile(() => {}); }
+
+/* ------------------------------------------------------------------
+   Every cursor, every state (library art)
+------------------------------------------------------------------ */
+function statesScene() {
+  document.body.style.background = "#1b1d21";
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "position:absolute;inset:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px 12px";
+  for (const c of L.CURSORS) {
+    const col = L.defaultColors(c);
+    const cell = document.createElement("div");
+    cell.style.cssText = "display:flex;align-items:center;gap:12px;background:#2a2c31;border:1px solid #3a3d44;border-radius:10px;padding:8px 10px";
+    cell.innerHTML = `<div style="width:118px;flex:none;color:#e6e6e6;font-size:13px;font-weight:600;line-height:1.3">${c.name}<div style="color:#8d939c;font-weight:400;font-size:11.5px">${c.states.length} states</div></div>` +
+      `<div style="display:flex;gap:6px">` +
+      c.states.map((s, i) => `<div title="${s.name}" style="width:58px;height:58px;display:grid;place-items:center;border-radius:6px;background:#5d6066">` +
+        R.cursorSVG(c, i, col, {}).replace("<svg ", '<svg style="width:74%;height:74%;overflow:visible;filter:drop-shadow(0 1px 1.2px rgba(0,0,0,.35))" ') + "</div>").join("") +
+      "</div>";
+    wrap.appendChild(cell);
+  }
+  document.body.appendChild(wrap);
+  window.ready = true;
+}
+
+if (scene === "hero") { heroScene(); place(); frame(0); }
+else if (scene === "library") librarySceneWithHover();
+else if (scene === "details") detailsScene();
+else if (scene === "colors") {
+  // a recolored Cartoon Glove, as if picked in the panel's color inputs
+  tile((w, d) => { pick(d, "glove"); d.querySelectorAll("#states button")[1].click(); },
+    { "cursortime.colors": { glove: { fill: [1, 0.84, 0.25], outline: [0.15, 0.1, 0.28], accent: [0.2, 0.8, 0.75], pop: [1, 0.36, 0.55] } } });
+}
+else if (scene === "states") statesScene();
+else if (scene === "og") ogScene();
+else if (scene === "icon") { document.body.style.background = q.get("bg") || "transparent"; document.documentElement.style.background = "transparent";
+  document.body.innerHTML = '<img src="../../images/' + (q.get("f") || "logo") + '.svg" style="position:absolute;inset:' + (q.get("pad") || 0) + 'px;width:calc(100% - ' + 2 * (q.get("pad") || 0) + 'px)">'; window.ready = true; }
+
+/* 1200x630 share image: logo + name + a row of big cursors in mid-click */
+function ogScene() {
+  const show = [["ac", 1], ["glove", 1], ["pixel-hand", 0], ["bubble-arrow", 2], ["crosshair", 1], ["busy", 0]];
+  document.body.innerHTML = `<div style="position:absolute;left:84px;top:86px;display:flex;align-items:center;gap:28px">
+      <img src="../../images/logo.svg" style="width:132px;height:132px">
+      <div><div style="color:#fff;font-size:58px;font-weight:700;letter-spacing:.24em">CURSOR TIME</div>
+      <div style="color:#b4b9c1;font-size:27px;margin-top:6px">Animatable vector cursors for After Effects</div></div></div>
+    <div style="position:absolute;left:84px;right:84px;top:318px;display:grid;grid-template-columns:repeat(6,1fr);gap:20px">` +
+    show.map(([id, k]) => { const c = byId(id); return `<div style="aspect-ratio:1;display:grid;place-items:center;border-radius:16px;
+      background:#5d6066 repeating-conic-gradient(rgba(255,255,255,.05) 0 25%,transparent 0 50%) 0 0/18px 18px;box-shadow:0 10px 30px rgba(0,0,0,.35)">` +
+      R.cursorSVG(c, k, L.defaultColors(c), {}).replace("<svg ", '<svg style="width:70%;height:70%;overflow:visible;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))" ') + "</div>"; }).join("") +
+    `</div><div style="position:absolute;left:84px;bottom:58px;color:#9ba1aa;font-size:22px">16 cursors · switchable states · editable colors · click ripple + press squash · free</div>`;
+  window.ready = true;
+}
+</script>
+</body></html>
